@@ -129,4 +129,5 @@ dmypy.json
 .pyre/
 
 # custom rules
-test.py
+sample/
+dependencies/
