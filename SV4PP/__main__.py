@@ -21,13 +21,8 @@ def runCLI(file):
     SV4PP - Security Verification for Python Packages
  
     """
-
     
-
-    # print(__name__)
-
-    # file = "test.py" # temporary hardcoded location
-    #temporary check for the virtual enviroment
+    #temporary check for the virtual enviroment TODO to be imporved
     try :
         print(os.environ['VIRTUAL_ENV'])
     except KeyError as e :
@@ -35,47 +30,54 @@ def runCLI(file):
         exit()
 
     # gather dependencies 
+ 
+    dependencies = getDepFromProject(file)
+    dependencies = remStdLib(dependencies)
+    
+    print("dependencies list @@ ", dependencies)
+    
+    
 
+    getDepFromPyPi(dependencies)
+    dependencies += extractDepfromFiles()
+
+    getDepFromPyPi(dependencies)
+    dependencies += extractDepfromFiles()
+
+
+    dependencies = deDupList(dependencies)
+    dependencies = remStdLib(dependencies)
+
+    print('####')               
+    print('final list @@ ',dependencies, '###')
+
+    ## analize the code
+      
+    
+
+### FUNCTIONS
+
+def getDepFromProject(file):
     dependencies = []
     with open(file, 'r') as f :
         lines = f.readlines()
         
         for line in lines:
             if re.match(r'^(from).\w*.(import)|^(import).*', line) :
-                match = re.sub(r'\n|,|^(import).|(from)|\s(import).*', '', line).strip()
+                match = re.sub(r'\n|,|^(import).|(from)|\s(import).*|\s(as).*', '', line).strip()
                 dependencies+= match.split()
                 # for i in dependencies : dependencies.remove(",")
-        # print()
-        ## remove any standard library packages
-        for std_lib_item in STD_LIB :
-            while (std_lib_item in dependencies):
-                dependencies.remove(std_lib_item)
-    
-    print("dependencies list @@ ", dependencies)
-    
-    if not os.path.exists(DEP_DIR): os.makedirs(DEP_DIR)
 
-    for dep in dependencies:
-        try:
-            address = 'https://pypi.org/pypi/{}/json'.format(dep)
-            req = requests.get(address)
-            resp = req.json()
-            print(resp['info']['name'], " -> ", resp['info']['summary'], "@", address) # gets the info from pypi
-            package_url = resp['urls'][0]['url']
-            filename = resp['urls'][0]['md5_digest']
-            with open(os.path.join(DEP_DIR,filename), "wb") as package:
-                package.write(requests.get(package_url).content)
-        except Exception:
-            print('dependency ', dep, 'could not be opened' )
+    return dependencies
 
-    dependencies += extractDepfromFiles()
 
-    dependencies = deDupList(dependencies)                    
-    print('final list @@ ',dependencies, '###')
-      
-    
-
-### FUNCTIONS
+def remStdLib(dependencies) :
+    ## remove any standard library packages
+    for std_lib_item in STD_LIB :
+        while (std_lib_item in dependencies):
+            dependencies.remove(std_lib_item)
+            print('removed standard library : ', std_lib_item )
+    return dependencies
 
 def extractDepfromFiles():
    
@@ -104,8 +106,29 @@ def extractDepfromFiles():
                         #     #     dependencies.append(i)
                         
                     # print(i)
+        else :
+            print('#### not a wheel : ', filename )
     return dependencieslist
 
+
+def getDepFromPyPi(dependencies):
+    if not os.path.exists(DEP_DIR): os.makedirs(DEP_DIR)
+
+    for dep in dependencies:
+        try:
+            address = 'https://pypi.org/pypi/{}/json'.format(dep)
+            req = requests.get(address)
+            resp = req.json()
+            # print(resp['info']['name'], " -> ", resp['info']['summary'], "@", address) # gets the info from pypi
+            package_url = resp['urls'][0]['url']
+            filename = resp['urls'][0]['md5_digest']
+            path_to_file = os.path.join(DEP_DIR,filename)
+            if not os.path.exists(path_to_file):
+                with open(path_to_file, "wb") as package:
+                    package.write(requests.get(package_url).content)
+        except Exception:
+            print('dependency ', dep, 'could not be found, not on PyPi' )
+    
 
 def deDupList(inputlist:list):
     deduplist = []
