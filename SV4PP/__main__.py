@@ -247,10 +247,19 @@ def runCLI(input):
         bandit_results = []
         src_file_list = dep['source_files']
         for src_file in src_file_list:
-            print(src_file)
+            # print('bandit scan @ ', src_file)
             bandit_results.append(banditScan(src_file))
         dep['bandit'] = bandit_results
-
+    
+    for dep in dependencies:
+        package_name = dep['package']
+        pypi_scan_path = os.path.join(ABS_PATH, 'SV4PP\IQTLabs\pypi-scan')
+        if os.path.exists(pypi_scan_path):
+            pypi_scan = subprocess.Popen(['py', 'main.py', '-m', package_name], stdout=subprocess.PIPE, cwd=pypi_scan_path)
+            out1, out2 = pypi_scan.communicate(timeout=30)
+            output = out1.decode('utf8')
+            typo_candidates = re.findall(r'[0-9]{1,2}\: ([a-zA-Z0-9\-\_\.]+)',output)
+            dep['typo_candidates'] = typo_candidates
 
     writeReportToJSON(dependencies)
 
@@ -527,8 +536,8 @@ def banditScan(path):
     report = []
     bandit = subprocess.Popen(["bandit", path, '-f', 'json', '-r', '-q'], stdout=subprocess.PIPE)
     # bandit.wait(timeout=30)
-    output = bandit.communicate()
-    output_json = json.loads(output[0].decode('utf8'))
+    out1, out2 = bandit.communicate(timeout=30)
+    output_json = json.loads(out1.decode('utf8'))
     # print(type(output_json))
 
     # for x, y in output_json.items() : print(x, y)
