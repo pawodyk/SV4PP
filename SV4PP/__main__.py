@@ -15,6 +15,7 @@ import re
 import requests
 import zipfile
 from datetime import datetime
+import pypistats
 
 # from setuptools import Require
 import urllib
@@ -28,11 +29,15 @@ from packaging.version import Version
 STD_LIB = ["abc", "aifc", "argparse", "array", "ast", "asynchat", "asyncio", "asyncore", "atexit", "audioop", "base64", "bdb", "binascii", "binhex", "bisect", "builtins", "bz2", "calendar", "cgi", "cgitb", "chunk", "cmath", "cmd", "code", "codecs", "codeop", "collections", "colorsys", "compileall", "concurrent", "configparser", "contextlib", "contextvars", "copy", "copyreg", "cProfile", "crypt", "csv", "ctypes", "curses", "dataclasses", "datetime", "dbm", "decimal", "difflib", "dis", "distutils", "doctest", "email", "encodings", "ensurepip", "enum", "errno", "faulthandler", "fcntl", "filecmp", "fileinput", "fnmatch", "fractions", "ftplib", "functools", "gc", "getopt", "getpass", "gettext", "glob", "graphlib", "grp", "gzip", "hashlib", "heapq", "hmac", "html", "http", "imaplib", "imghdr", "imp", "importlib", "inspect", "io", "ipaddress", "itertools", "json", "keyword", "lib2to3", "linecache", "locale", "logging", "lzma", "mailbox", "mailcap", "marshal", "math", "mimetypes", "mmap", "modulefinder", "msilib", "msvcrt", "multiprocessing", "netrc", "nis", "nntplib", "numbers", "operator", "optparse", "os", "ossaudiodev", "pathlib", "pdb", "pickle", "pickletools", "pipes", "pkgutil", "platform", "plistlib", "poplib", "posix", "pprint", "profile", "pstats", "pty", "pwd", "py_compile", "pyclbr", "pydoc", "queue", "quopri", "random", "re", "readline", "reprlib", "resource", "rlcompleter", "runpy", "sched", "secrets", "select", "selectors", "shelve", "shlex", "shutil", "signal", "site", "smtpd", "smtplib", "sndhdr", "socket", "socketserver", "spwd", "sqlite3", "ssl", "stat", "statistics", "string", "stringprep", "struct", "subprocess", "sunau", "symtable", "sys", "sysconfig", "syslog", "tabnanny", "tarfile", "telnetlib", "tempfile", "termios", "test", "textwrap", "threading", "time", "timeit", "tkinter", "token", "tokenize", "trace", "traceback", "tracemalloc", "tty", "turtle", "turtledemo", "types", "typing", "unicodedata", "unittest", "urllib", "uu", "uuid", "venv", "warnings", "wave", "weakref", "webbrowser", "winreg", "winsound", "wsgiref", "xdrlib", "xml", "xmlrpc", "zipapp", "zipfile", "zipimport", "zlib", "zoneinfo"]
 DEP_DIR = os.path.join('temp', 'dependencies')
 ABS_PATH = os.getcwd() #os.path.dirname(os.path.abspath(__file__))
-VERBOSE_LVL = 1
+VERBOSE_LVL = 2
 
 @click.command()
 @click.argument('input')
-def runCLI(input):
+@click.option('-s', '--source', 'input_type', flag_value='source')
+@click.option('-r', '--requirements', 'input_type', flag_value='requirements')
+@click.option('-p', '--package', 'input_type', flag_value='package')
+
+def runCLI(input,input_type):
     """
     SV4PP - Security Verification for Python Packages
     
@@ -56,6 +61,7 @@ def runCLI(input):
     
     '''     
 
+    # print(input_type)
 
     print()
     print('##########################')
@@ -77,7 +83,7 @@ def runCLI(input):
     
 
     # input type source / requirements / package
-    input_type = 'requirements'
+    # input_type = 'requirements'
 
     ### SECTION: Gather dependencies.... ###
 
@@ -109,16 +115,21 @@ def runCLI(input):
             req_file = f.read().splitlines()
             for line in req_file:
                 # print('@', line)
-                match = re.match(r'(^[a-zA-Z0-9\-]+)==([0-9\.]+)', line)
+                match = re.match(r'(^[a-zA-Z0-9\-\_\.]+)==([0-9\.]+)', line)
                 if match :
                     dependencies.append({'package':match.group(1),'version': match.group(2), 'source': 'req'})
                     
     elif input_type=='package':
-        match = re.match(r'(^[a-zA-Z0-9\-]+)==([0-9\.]+)', input)
+        match = re.match(r'(^[a-zA-Z0-9\-\_\.]+)==([0-9\.]+)', input)
         if match :
             dependencies.append({'package':match.group(1),'version': match.group(2)})
         else :
-            dependencies.append({'package': input})
+            ## TODO : if user specify file e.g. requirements.txt the app will continue. need to implement second checks for (^[a-zA-Z0-9\-\_\.]+)
+            if re.match(r'(^[a-zA-Z0-9\-\_\.]+)',input):
+                dependencies.append({'package': input})
+            else:
+                print('could not parse the package name, please make sure you select package in the format [name]==[version]')
+
     else : 
         raise Exception("Input type need to be specified")
 
@@ -143,7 +154,20 @@ def runCLI(input):
             pass
     
     dependencies = dependencies + temp_list 
- 
+    
+
+    print('### Gathering downloads numbers from pypistats')
+    for dep in dependencies:
+        downlo_last_week = 0
+        name = dep['package']
+        
+        try :
+            data = json.loads(pypistats.recent(name, "week", format="json"))
+            downlo_last_week = data['data']['last_week']
+        except Exception:
+            downlo_last_week = -1
+            pass
+        dep['downlo_last_week'] = downlo_last_week
 
     # print(sub_dep)
     # print(dependencies)
@@ -263,11 +287,13 @@ def runCLI(input):
         dep['bandit'] = bandit_results
     if VERBOSE_LVL == 1:
         print()
-    
+
+
     print('### checking packages for typosquatting ###')
     pypi_scan_path = os.path.join(ABS_PATH, 'SV4PP\IQTLabs\pypi-scan')
     if os.path.exists(pypi_scan_path):
         for dep in dependencies:
+            typo_candidates = []
             package_name = dep['package']
             if VERBOSE_LVL >=2 :
                 print('I am checking for possible typosquatting for package :: ', package_name)
@@ -276,7 +302,16 @@ def runCLI(input):
             pypi_scan = subprocess.Popen(['py', 'main.py', '-m', package_name], stdout=subprocess.PIPE, cwd=pypi_scan_path)
             out1, out2 = pypi_scan.communicate(timeout=30)
             output = out1.decode('utf8')
-            typo_candidates = re.findall(r'[0-9]{1,2}\: ([a-zA-Z0-9\-\_\.]+)',output)
+            typo_pgs = re.findall(r'[0-9]{1,2}\: ([a-zA-Z0-9\-\_\.]+)',output)
+            for typo_pg in typo_pgs :
+                downlo_last_week = 0
+                try :
+                    data = json.loads(pypistats.recent(typo_pg, "week", format="json"))
+                    downlo_last_week = data['data']['last_week']
+                except Exception as ex:
+                    downlo_last_week = -1
+                    pass
+                typo_candidates.append({'name': typo_pg, 'downlo_last_week': downlo_last_week})
             dep['typo_candidates'] = typo_candidates
             if VERBOSE_LVL >=2 :
                 print('done checking %s for typosquatting'%package_name)

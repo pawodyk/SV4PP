@@ -1,0 +1,305 @@
+{
+    "top_packages": {
+        "CodeIntel": {
+            "size": 23767329521
+        },
+        "MegEngine": {
+            "size": 15291555982
+        },
+        "NEURON-gpu-nightly": {
+            "size": 10718977652
+        },
+        "OpenVisus": {
+            "size": 135153017365
+        },
+        "Panda3D": {
+            "size": 28876047282
+        },
+        "PySide2": {
+            "size": 20246295405
+        },
+        "SimpleITK": {
+            "size": 11186059677
+        },
+        "aim": {
+            "size": 11276637968
+        },
+        "allennlp-pvt-nightly": {
+            "size": 17476249336
+        },
+        "apache-flink": {
+            "size": 20428686977
+        },
+        "awkward": {
+            "size": 11050969727
+        },
+        "bagua-cuda102": {
+            "size": 10736344659
+        },
+        "bagua-cuda111": {
+            "size": 10663639102
+        },
+        "bagua-cuda113": {
+            "size": 10681129891
+        },
+        "botocore": {
+            "size": 14865025798
+        },
+        "casadi": {
+            "size": 16848539955
+        },
+        "catboost": {
+            "size": 44895429521
+        },
+        "catboost-dev": {
+            "size": 228935565788
+        },
+        "ccxt": {
+            "size": 16006057675
+        },
+        "cdktf-cdktf-provider-azurerm": {
+            "size": 10731210338
+        },
+        "chellow": {
+            "size": 10646510335
+        },
+        "cityenergyanalyst": {
+            "size": 12553111820
+        },
+        "cmake": {
+            "size": 24040266566
+        },
+        "cntk-gpu": {
+            "size": 13802853092
+        },
+        "codeforlife-portal": {
+            "size": 29446452989
+        },
+        "construct-hub": {
+            "size": 12409865216
+        },
+        "ctranslate2": {
+            "size": 11652393781
+        },
+        "cupy-cuda100": {
+            "size": 70214494243
+        },
+        "cupy-cuda101": {
+            "size": 54977283452
+        },
+        "cupy-cuda102": {
+            "size": 28281976785
+        },
+        "cupy-cuda110": {
+            "size": 11963783741
+        },
+        "cupy-cuda111": {
+            "size": 13576115930
+        },
+        "cupy-cuda80": {
+            "size": 36309185968
+        },
+        "cupy-cuda90": {
+            "size": 66016849712
+        },
+        "cupy-cuda91": {
+            "size": 55467674599
+        },
+        "cupy-cuda92": {
+            "size": 71166097667
+        },
+        "ddtrace": {
+            "size": 12077814696
+        },
+        "deepspeech": {
+            "size": 15874762507
+        },
+        "deepspeech-gpu": {
+            "size": 36553794373
+        },
+        "dependency-injector": {
+            "size": 11147030064
+        },
+        "frida": {
+            "size": 150788206214
+        },
+        "gensim": {
+            "size": 10716463592
+        },
+        "grpcio": {
+            "size": 30849847453
+        },
+        "grpcio-tools": {
+            "size": 35892218128
+        },
+        "h2o": {
+            "size": 11482800984
+        },
+        "home-assistant-frontend": {
+            "size": 11609198379
+        },
+        "homeassistant": {
+            "size": 11101439741
+        },
+        "honeybee-energy": {
+            "size": 10710355438
+        },
+        "intel-tensorflow": {
+            "size": 14453567467
+        },
+        "itk-core": {
+            "size": 17903285454
+        },
+        "itk-filtering": {
+            "size": 20195140336
+        },
+        "jiminy-py": {
+            "size": 11552277000
+        },
+        "kolibri": {
+            "size": 15127321394
+        },
+        "lalsuite": {
+            "size": 332240949947
+        },
+        "matplotlib": {
+            "size": 15518478749
+        },
+        "mxnet-cu80": {
+            "size": 11664285925
+        },
+        "mxnet-cu90": {
+            "size": 12383956010
+        },
+        "nimbusml": {
+            "size": 13133151402
+        },
+        "numpy": {
+            "size": 27378515511
+        },
+        "opencv-contrib-python": {
+            "size": 43332626684
+        },
+        "opencv-contrib-python-headless": {
+            "size": 39391576512
+        },
+        "opencv-python": {
+            "size": 42000801555
+        },
+        "opencv-python-headless": {
+            "size": 31397780497
+        },
+        "ovito": {
+            "size": 22932648030
+        },
+        "paddlepaddle": {
+            "size": 31273555124
+        },
+        "paddlepaddle-gpu": {
+            "size": 175258476072
+        },
+        "pandas": {
+            "size": 11078338428
+        },
+        "pantsbuild.pants": {
+            "size": 21686846218
+        },
+        "pulsar-client-sn": {
+            "size": 10733900803
+        },
+        "pyagrum-nightly": {
+            "size": 63475933383
+        },
+        "pyarrow": {
+            "size": 12007101885
+        },
+        "pybullet": {
+            "size": 24554417978
+        },
+        "pygame": {
+            "size": 17292502664
+        },
+        "pyopenms-nightly": {
+            "size": 10726858743
+        },
+        "pyqt5-tools": {
+            "size": 32152756470
+        },
+        "pystan": {
+            "size": 14309363208
+        },
+        "pythondata-misc-opentitan": {
+            "size": 10723949240
+        },
+        "rasterio": {
+            "size": 17754766220
+        },
+        "ray": {
+            "size": 26174326101
+        },
+        "scikit-image": {
+            "size": 10741540406
+        },
+        "scipy": {
+            "size": 37543636694
+        },
+        "sickrage": {
+            "size": 33386908158
+        },
+        "spacy": {
+            "size": 12791149698
+        },
+        "swat": {
+            "size": 10668829632
+        },
+        "taichi": {
+            "size": 12018371529
+        },
+        "tendenci": {
+            "size": 20019901550
+        },
+        "tensorflow": {
+            "size": 168142910838
+        },
+        "tensorflow-cpu": {
+            "size": 60892183554
+        },
+        "tensorflow-gpu": {
+            "size": 159684031760
+        },
+        "tensorflow-io-2.0-preview": {
+            "size": 29282760382
+        },
+        "tensorflow-io-nightly": {
+            "size": 198200092161
+        },
+        "tensorflow-rocm": {
+            "size": 52924115481
+        },
+        "tensorflow-rocm-enhanced": {
+            "size": 15475138417
+        },
+        "tf-nightly": {
+            "size": 434825117428
+        },
+        "tf-nightly-cpu": {
+            "size": 261713477949
+        },
+        "tf-nightly-gpu": {
+            "size": 350135772060
+        },
+        "torch": {
+            "size": 86986049422
+        },
+        "turicreate": {
+            "size": 11357519201
+        },
+        "udata": {
+            "size": 27182592088
+        },
+        "xpress": {
+            "size": 21445137138
+        }
+    },
+    "total_packages_size": 11155996980489
+}
