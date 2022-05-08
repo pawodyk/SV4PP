@@ -283,7 +283,8 @@ def runCLI(input,input_type):
         src_file_list = dep['source_files']
         for src_file in src_file_list:
             # print('bandit scan @ ', src_file)
-            bandit_results.append(banditScan(src_file))
+            bandit_report = banditScan(src_file)
+            bandit_results.append(bandit_report)
         dep['bandit'] = bandit_results
     if VERBOSE_LVL == 1:
         print()
@@ -304,14 +305,18 @@ def runCLI(input,input_type):
             output = out1.decode('utf8')
             typo_pgs = re.findall(r'[0-9]{1,2}\: ([a-zA-Z0-9\-\_\.]+)',output)
             for typo_pg in typo_pgs :
-                downlo_last_week = 0
+                down_last_week = 0
+                name = typo_pg
                 try :
-                    data = json.loads(pypistats.recent(typo_pg, "week", format="json"))
-                    downlo_last_week = data['data']['last_week']
+                    data = pypistats.recent(name, "week", format="json")
+                    data_json = json.loads(data)
+                    down_last_week = data_json['data']['last_week']
                 except Exception as ex:
-                    downlo_last_week = -1
-                    pass
-                typo_candidates.append({'name': typo_pg, 'downlo_last_week': downlo_last_week})
+                    # print(ex)
+                    down_last_week = -1
+                
+                typo_candidates.append({'name': name, 'downlo_last_week': down_last_week})
+
             dep['typo_candidates'] = typo_candidates
             if VERBOSE_LVL >=2 :
                 print('done checking %s for typosquatting'%package_name)
@@ -578,7 +583,7 @@ def banditScan(path):
     elif VERBOSE_LVL ==1 :
         print('.', end=' ', flush=True)
     report = []
-    bandit = subprocess.Popen(["bandit", path, '-f', 'json', '-r', '-q'], stdout=subprocess.PIPE)
+    bandit = subprocess.Popen(["bandit", path, '-f', 'json', '-q', '-lll'], stdout=subprocess.PIPE)
     # bandit.wait(timeout=30)
     out1, out2 = bandit.communicate(timeout=30)
     output_json = json.loads(out1.decode('utf8'))
@@ -588,10 +593,13 @@ def banditScan(path):
     # print(output_json['results'])
 
     for x in output_json['results'] :
-        #for y, z in x.items() : print(y, z)
+        # for y, z in x.items() : print(y, z)
         report.append(x)
 
-    return report
+    filename =  os.path.basename(path)
+    dir = os.path.dirname(path)
+
+    return {'file':filename, 'path': dir, 'report': report}
 
 if __name__ == '__main__':
     runCLI()
