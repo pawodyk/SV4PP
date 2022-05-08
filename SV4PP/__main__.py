@@ -28,6 +28,7 @@ from packaging.version import Version
 STD_LIB = ["abc", "aifc", "argparse", "array", "ast", "asynchat", "asyncio", "asyncore", "atexit", "audioop", "base64", "bdb", "binascii", "binhex", "bisect", "builtins", "bz2", "calendar", "cgi", "cgitb", "chunk", "cmath", "cmd", "code", "codecs", "codeop", "collections", "colorsys", "compileall", "concurrent", "configparser", "contextlib", "contextvars", "copy", "copyreg", "cProfile", "crypt", "csv", "ctypes", "curses", "dataclasses", "datetime", "dbm", "decimal", "difflib", "dis", "distutils", "doctest", "email", "encodings", "ensurepip", "enum", "errno", "faulthandler", "fcntl", "filecmp", "fileinput", "fnmatch", "fractions", "ftplib", "functools", "gc", "getopt", "getpass", "gettext", "glob", "graphlib", "grp", "gzip", "hashlib", "heapq", "hmac", "html", "http", "imaplib", "imghdr", "imp", "importlib", "inspect", "io", "ipaddress", "itertools", "json", "keyword", "lib2to3", "linecache", "locale", "logging", "lzma", "mailbox", "mailcap", "marshal", "math", "mimetypes", "mmap", "modulefinder", "msilib", "msvcrt", "multiprocessing", "netrc", "nis", "nntplib", "numbers", "operator", "optparse", "os", "ossaudiodev", "pathlib", "pdb", "pickle", "pickletools", "pipes", "pkgutil", "platform", "plistlib", "poplib", "posix", "pprint", "profile", "pstats", "pty", "pwd", "py_compile", "pyclbr", "pydoc", "queue", "quopri", "random", "re", "readline", "reprlib", "resource", "rlcompleter", "runpy", "sched", "secrets", "select", "selectors", "shelve", "shlex", "shutil", "signal", "site", "smtpd", "smtplib", "sndhdr", "socket", "socketserver", "spwd", "sqlite3", "ssl", "stat", "statistics", "string", "stringprep", "struct", "subprocess", "sunau", "symtable", "sys", "sysconfig", "syslog", "tabnanny", "tarfile", "telnetlib", "tempfile", "termios", "test", "textwrap", "threading", "time", "timeit", "tkinter", "token", "tokenize", "trace", "traceback", "tracemalloc", "tty", "turtle", "turtledemo", "types", "typing", "unicodedata", "unittest", "urllib", "uu", "uuid", "venv", "warnings", "wave", "weakref", "webbrowser", "winreg", "winsound", "wsgiref", "xdrlib", "xml", "xmlrpc", "zipapp", "zipfile", "zipimport", "zlib", "zoneinfo"]
 DEP_DIR = os.path.join('temp', 'dependencies')
 ABS_PATH = os.getcwd() #os.path.dirname(os.path.abspath(__file__))
+VERBOSE_LVL = 1
 
 @click.command()
 @click.argument('input')
@@ -54,6 +55,14 @@ def runCLI(input):
     report = []
     
     '''     
+
+
+    print()
+    print('##########################')
+    print('##### STARTING SV4PP #####')
+    print('##########################')
+    print()
+
     createTempDir()
 
     # example = ['certifi', 'charset-normalizer', 'coloredlogs', 'gitdb', 'GitPython', 'humanfriendly', 'idna', 'lxml', 'pyreadline3', 'requests', 'smmap', 'typing-extensions', 'urllib3', 'brotlicffi', 'brotli', 'brotlipy', 'pyOpenSSL', 'cryptography', 'PySocks', 'unicodedata2', 'chardet', 'win-inet-pton', 'capturer', 'cssselect', 'html5lib', 'BeautifulSoup4', 'Cython', 'monotonic', 'pyreadline', 'soupsieve', 'html5lib;', 'lxml;', 'six', 'webencodings', 'genshi', 'pytest', 'coverage', 'pytest-xdist', 'pytest-randomly', 'cffi', 'sphinx', 'sphinx-rtd-theme', 'pyenchant', 'twine', 'sphinxcontrib-spelling', 'black', 'flake8', 'flake8-import-order', 'pep8-naming', 'setuptools-rust', 'bcrypt', 'pytest-benchmark', 'pytest-cov', 'pytest-subtests', 'pretend', 'iso8601', 'pytz', 'hypothesis', 'enum34', 'flaky']
@@ -115,9 +124,10 @@ def runCLI(input):
 
     
     # print("gathered dependencies @@ ", dependencies)
-    
+    print('### Getting package info from PyPi###')
     dependencies = getInfoFromPyPi(dependencies)
 
+    print('### Extracting Dependencies from the packages ###')
     sub_dep = []
     temp_list = []
     for dep in dependencies:
@@ -137,12 +147,12 @@ def runCLI(input):
 
     # print(sub_dep)
     # print(dependencies)
-    
+    print('### Extracting Source from the packages ###')
     for d in dependencies:
-        file_path = d['package_path']
-        # print(file_path)
-        d['source_files'] = extractSourceFromPackage(file_path)
-        # print(d)
+        if 'package_path' in d:        
+            file_path = d['package_path']
+            # print(file_path)
+            d['source_files'] = extractSourceFromPackage(file_path)
 
 
     # extractSourceFromPackage()
@@ -176,9 +186,10 @@ def runCLI(input):
 
     #for x in safety_db : print(x)
 
-    # database 
+    # databases
+    print('### checking package in Safety-DB ###')
     safety_db = requests.get('https://raw.githubusercontent.com/pyupio/safety-db/master/data/insecure_full.json').json() ## TODO check was the data correct
-
+    
     for package in dependencies :
         name = package['package']
         version = package['version']
@@ -203,7 +214,7 @@ def runCLI(input):
             # print(return_list)
             package['safety_db'] = return_list
 
-
+    print('### checking package in OSV ###')
     ### OSV check
     #     postdata = '{"version": "%s", "package": {"name": "%s", "ecosystem": "PyPI"}}'%(version,name)
     #     #print('\t***********\tBAZINGA!!\t***********\n')
@@ -242,7 +253,7 @@ def runCLI(input):
     # for item in dependencies:
     #     if 'file_path' in item:
     # banditScan('D:\\OneDrive - Technological University Dublin\\@Individual Project\\Program\\temp\\src\\click\\')
-
+    print('### checking python source with bandit ###')
     for dep in dependencies:
         bandit_results = []
         src_file_list = dep['source_files']
@@ -250,18 +261,39 @@ def runCLI(input):
             # print('bandit scan @ ', src_file)
             bandit_results.append(banditScan(src_file))
         dep['bandit'] = bandit_results
+    if VERBOSE_LVL == 1:
+        print()
     
-    for dep in dependencies:
-        package_name = dep['package']
-        pypi_scan_path = os.path.join(ABS_PATH, 'SV4PP\IQTLabs\pypi-scan')
-        if os.path.exists(pypi_scan_path):
+    print('### checking packages for typosquatting ###')
+    pypi_scan_path = os.path.join(ABS_PATH, 'SV4PP\IQTLabs\pypi-scan')
+    if os.path.exists(pypi_scan_path):
+        for dep in dependencies:
+            package_name = dep['package']
+            if VERBOSE_LVL >=2 :
+                print('I am checking for possible typosquatting for package :: ', package_name)
+            elif VERBOSE_LVL >=1:
+                print('.', end=' ', flush=True)
             pypi_scan = subprocess.Popen(['py', 'main.py', '-m', package_name], stdout=subprocess.PIPE, cwd=pypi_scan_path)
             out1, out2 = pypi_scan.communicate(timeout=30)
             output = out1.decode('utf8')
             typo_candidates = re.findall(r'[0-9]{1,2}\: ([a-zA-Z0-9\-\_\.]+)',output)
             dep['typo_candidates'] = typo_candidates
-
+            if VERBOSE_LVL >=2 :
+                print('done checking %s for typosquatting'%package_name)
+        if VERBOSE_LVL == 1:
+            print()
+    else:
+        print("pypi-scan could not be found")
+    print('### Writing report to file')
     writeReportToJSON(dependencies)
+
+    print()
+    print('##########################')
+    print('### ANALYSIS COMPLETED ###')
+    print('##########################')
+    print()
+
+    # user_input = input('what would you like to do\n')
 
     # ### CHECK
     # for d in dependencies:
@@ -276,35 +308,6 @@ def runCLI(input):
 def getPyFromSource():
     
     pass
-
-
-# def getDependenciesFromPackage() :
-#     for filename in os.listdir(DEP_DIR) :
-#         dep = os.path.join (ABS_PATH, DEP_DIR, filename)
-#         if zipfile.is_zipfile(dep) :
-#             with zipfile.ZipFile(dep) as archive:
-#                 contents = archive.namelist()
-#                 for i in contents: 
-                    
-#                     if re.search(r'\.dist-info\/METADATA$', i):
-#                         # print(i, ' match ')
-#                         meta = archive.open(i).read().decode('utf-8')
-#                         sub_dep = re.findall(r'Requires-Dist: (.*?)\s', meta) ##TODO include version of the package
-#                         dependencieslist += sub_dep
-#                         # print('sd @@ ', sub_dep)
-#                         # print('d @@ ', dependencieslist)
-
-#                         # for line in archive.open(i):
-#                         #     ln = line.decode('utf-8')
-#                         #     if re.search(r'(Requires-Dist:)', ln):
-#                         #         print(ln)
-#                         #     # if not i in dependencies:
-#                         #     #     dependencies.append(i)
-                        
-#                     # print(i)
-#         else :
-#             print('#### not a wheel : ', filename )
-#     pass
 
 
 def writeReportToJSON(output:dict):
@@ -376,7 +379,7 @@ def extractDependenciesfromPackage(file_path):
                     # print(i, ' match ')
                     meta = archive.open(i).read().decode('utf-8')
                     parent = re.search(r'\nName: ([a-zA-Z0-9\-\_\.]+)\n', meta).group(1)
-                    sub_dep = re.findall(r'Requires-Dist: (.*?)\s', meta) ##TODO include version of the package
+                    sub_dep = re.findall(r'Requires-Dist: ([a-zA-Z0-9\-\_\.]+)', meta) ##TODO include version of the package
                     
                     for item in sub_dep:
                         dependencieslist.append({'package': item, 'source': 'meta', 'parent': parent})
@@ -392,7 +395,9 @@ def extractDependenciesfromPackage(file_path):
                     
                 # print(i)
     else :
-        print('#### not a wheel : ', file_path )
+        if VERBOSE_LVL > 1:
+            print('could not extract dependencies for %s, package not in wheel format.'%file_path )
+        pass
     
     
     dependencieslist = getInfoFromPyPi(dependencieslist)
@@ -533,6 +538,10 @@ def deDupList(inputlist:list):
 
 def banditScan(path):
     ## Bandit analysis
+    if VERBOSE_LVL >= 2:
+        print('Bandit checking ', path)
+    elif VERBOSE_LVL ==1 :
+        print('.', end=' ', flush=True)
     report = []
     bandit = subprocess.Popen(["bandit", path, '-f', 'json', '-r', '-q'], stdout=subprocess.PIPE)
     # bandit.wait(timeout=30)
