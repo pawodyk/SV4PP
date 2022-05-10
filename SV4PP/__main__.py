@@ -292,7 +292,7 @@ def runCLI(argument,input_type):
 
 
     print('### checking packages for typosquatting ###')
-    pypi_scan_path = os.path.join(ABS_PATH, 'SV4PP\IQTLabs\pypi-scan')
+    pypi_scan_path = os.path.join(ABS_PATH, 'SV4PP','IQTLabs','pypi-scan')
     if os.path.exists(pypi_scan_path):
         for dep in dependencies:
             typo_candidates = []
