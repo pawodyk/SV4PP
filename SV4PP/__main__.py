@@ -29,19 +29,19 @@ from packaging.version import Version
 STD_LIB = ["abc", "aifc", "argparse", "array", "ast", "asynchat", "asyncio", "asyncore", "atexit", "audioop", "base64", "bdb", "binascii", "binhex", "bisect", "builtins", "bz2", "calendar", "cgi", "cgitb", "chunk", "cmath", "cmd", "code", "codecs", "codeop", "collections", "colorsys", "compileall", "concurrent", "configparser", "contextlib", "contextvars", "copy", "copyreg", "cProfile", "crypt", "csv", "ctypes", "curses", "dataclasses", "datetime", "dbm", "decimal", "difflib", "dis", "distutils", "doctest", "email", "encodings", "ensurepip", "enum", "errno", "faulthandler", "fcntl", "filecmp", "fileinput", "fnmatch", "fractions", "ftplib", "functools", "gc", "getopt", "getpass", "gettext", "glob", "graphlib", "grp", "gzip", "hashlib", "heapq", "hmac", "html", "http", "imaplib", "imghdr", "imp", "importlib", "inspect", "io", "ipaddress", "itertools", "json", "keyword", "lib2to3", "linecache", "locale", "logging", "lzma", "mailbox", "mailcap", "marshal", "math", "mimetypes", "mmap", "modulefinder", "msilib", "msvcrt", "multiprocessing", "netrc", "nis", "nntplib", "numbers", "operator", "optparse", "os", "ossaudiodev", "pathlib", "pdb", "pickle", "pickletools", "pipes", "pkgutil", "platform", "plistlib", "poplib", "posix", "pprint", "profile", "pstats", "pty", "pwd", "py_compile", "pyclbr", "pydoc", "queue", "quopri", "random", "re", "readline", "reprlib", "resource", "rlcompleter", "runpy", "sched", "secrets", "select", "selectors", "shelve", "shlex", "shutil", "signal", "site", "smtpd", "smtplib", "sndhdr", "socket", "socketserver", "spwd", "sqlite3", "ssl", "stat", "statistics", "string", "stringprep", "struct", "subprocess", "sunau", "symtable", "sys", "sysconfig", "syslog", "tabnanny", "tarfile", "telnetlib", "tempfile", "termios", "test", "textwrap", "threading", "time", "timeit", "tkinter", "token", "tokenize", "trace", "traceback", "tracemalloc", "tty", "turtle", "turtledemo", "types", "typing", "unicodedata", "unittest", "urllib", "uu", "uuid", "venv", "warnings", "wave", "weakref", "webbrowser", "winreg", "winsound", "wsgiref", "xdrlib", "xml", "xmlrpc", "zipapp", "zipfile", "zipimport", "zlib", "zoneinfo"]
 DEP_DIR = os.path.join('temp', 'dependencies')
 ABS_PATH = os.getcwd() #os.path.dirname(os.path.abspath(__file__))
-VERBOSE_LVL = 2
+VERBOSE_LVL = 1
 
 @click.command()
-@click.argument('input')
+@click.argument('argument')
 @click.option('-s', '--source', 'input_type', flag_value='source')
 @click.option('-r', '--requirements', 'input_type', flag_value='requirements')
 @click.option('-p', '--package', 'input_type', flag_value='package')
 
-def runCLI(input,input_type):
+def runCLI(argument,input_type):
     """
     SV4PP - Security Verification for Python Packages
     
-    INPUT:\n
+    ARGUMENT:\n
     \t-> path to your python project or file OR\n
     \t-> path to requirements.txt OR\n
     \t-> package name in the format package==1.1.1
@@ -90,8 +90,8 @@ def runCLI(input,input_type):
     dependencies = []
 
     if input_type == 'source':
-        if os.path.exists(input) : 
-            files = getAllPyFiles(input)
+        if os.path.exists(argument) : 
+            files = getAllPyFiles(argument)
             deplist = []
             filedep = []
             for file in files:
@@ -105,13 +105,13 @@ def runCLI(input,input_type):
                 # print(package)
 
     elif input_type=='requirements':
-        if os.path.isdir(input):
-            input = input + "\\requirements.txt"
+        if os.path.isdir(argument):
+            argument = argument + "\\requirements.txt"
 
-        if not os.path.exists(input):
+        if not os.path.exists(argument):
             raise Exception("your requirements files do not exist")
         
-        with open(input, 'r') as f:
+        with open(argument, 'r') as f:
             req_file = f.read().splitlines()
             for line in req_file:
                 # print('@', line)
@@ -120,13 +120,13 @@ def runCLI(input,input_type):
                     dependencies.append({'package':match.group(1),'version': match.group(2), 'source': 'req'})
                     
     elif input_type=='package':
-        match = re.match(r'(^[a-zA-Z0-9\-\_\.]+)==([0-9\.]+)', input)
+        match = re.match(r'(^[a-zA-Z0-9\-\_\.]+)==([0-9\.]+)', argument)
         if match :
             dependencies.append({'package':match.group(1),'version': match.group(2)})
         else :
             ## TODO : if user specify file e.g. requirements.txt the app will continue. need to implement second checks for (^[a-zA-Z0-9\-\_\.]+)
-            if re.match(r'(^[a-zA-Z0-9\-\_\.]+)',input):
-                dependencies.append({'package': input})
+            if re.match(r'(^[a-zA-Z0-9\-\_\.]+)',argument):
+                dependencies.append({'package': argument})
             else:
                 print('could not parse the package name, please make sure you select package in the format [name]==[version]')
 
@@ -277,6 +277,7 @@ def runCLI(input,input_type):
     # for item in dependencies:
     #     if 'file_path' in item:
     # banditScan('D:\\OneDrive - Technological University Dublin\\@Individual Project\\Program\\temp\\src\\click\\')
+
     print('### checking python source with bandit ###')
     for dep in dependencies:
         bandit_results = []
@@ -314,7 +315,8 @@ def runCLI(input,input_type):
                 except Exception as ex:
                     # print(ex)
                     down_last_week = -1
-                
+                if VERBOSE_LVL >=2 :
+                    print( name, '\tlast week dowloads #: ', down_last_week)
                 typo_candidates.append({'name': name, 'downlo_last_week': down_last_week})
 
             dep['typo_candidates'] = typo_candidates
@@ -333,22 +335,112 @@ def runCLI(input,input_type):
     print('##########################')
     print()
 
-    # user_input = input('what would you like to do\n')
-
-    # ### CHECK
-    # for d in dependencies:
-    #     print("###")
-    #     for x,y in d.items():
-    #         print(x,' : ', y)
     
 
 
-### FUNCTIONS
 
-def getPyFromSource():
+    req_output = []
+    req_output.append('# requirement.txt generated with SV4PP #')
+    for dep in dependencies:
+        req_output.append('{} == {} --hash=sha256:{}'.format(dep['package'], dep['version'], dep['hash']))
     
-    pass
 
+    print('#### COPY FROM HERE ####')
+    for line in req_output:
+        print(line)
+    print('#### TO HERE ####\n')
+
+    user_input = input('save to file?\n[yes] [no]\n')
+    if user_input in ['yes', 'y']:
+        if not os.path.exists('requirements.txt'):
+            with open('requirements.txt', 'w') as f:
+                f.write('\n'.join(req_output))
+                print('File Generated')
+            pass
+        else:
+            print('requirements file already exists.\nTo protect your data file was not overwritten,\nif you want to save to file please rename your current requirement.txt file')
+
+
+    ### USER INTERFACE SECTION
+    ### TODO - CLI 
+    ''' 
+    #stats 
+    stat_bandit = 0
+    stat_source = 0
+    stat_safety = 0
+    stat_typos = 0
+
+    for dep in dependencies:
+        for file_report in dep['bandit']:
+            if file_report['report'] != []:
+                stat_bandit+1
+    
+    user_input = ''
+
+    while (user_input not in ['exit', 'e', 'quit', 'q']):
+
+        print('@@@@@')
+        print('total packages scaned : ', len(dependencies))
+        print('total packages scaned : ', stat_bandit)
+        print('total packages scaned : ', stat_safety)
+        print('total potential typosquatted packages: ', stat_typos)
+        
+
+
+        print('@@@@@')
+        print('what would you like to do next?')
+
+        print('[exit] [view] [requirements] [bandit]')
+        user_input = input()
+
+        if user_input in ['view','v']:
+            print('view one')
+        elif user_input in ['requirements','r']:
+            req_output = []
+            req_output.append('# requirement.txt generated with SV4PP #')
+            for dep in dependencies:
+                req_output.append('{} == {} --hash=sha256:{}'.format(dep['package'], dep['version'], dep['hash']))
+            
+
+            print('#### COPY FROM HERE ####')
+            for line in req_output:
+                print(line)
+            print('#### TO HERE ####')
+
+            user_input = input('save to file?\n[yes] [no]\n')
+            if user_input in ['yes', 'y']:
+                if not os.path.exists('requirements.txt'):
+                    with open('requirements.txt', 'w') as f:
+                        f.write('\n'.join(req_output))
+                    pass
+                else:
+                    print('requirements file already exists.\nTo protect your data file was not overwritten,\nif you want to save to file please rename your current requirement.txt file')
+
+        elif user_input in ['bandit','b']:
+            for dep in dependencies:
+                print('')
+            pass
+        elif user_input in ['list','l']:
+            pass
+        elif user_input in ['dependencies','d']:
+            pass
+        elif user_input == 'all':
+            print('Viewing all data results')
+            for d in dependencies:
+                print("###")
+                for x,y in d.items():
+                    print(x,' : ', y)
+        elif user_input in ['exit', 'e', 'quit', 'q']:
+            print('\nThank you for using SV4PP\n### TERMINATING\n')
+        else:
+            print('Not a valid option')
+    '''
+
+  
+
+#####################################################################################################
+### FUNCTIONS 
+#####################################################################################################
 
 def writeReportToJSON(output:dict):
     #output = {"example": banditScan('..\\sample\\test.py')}
@@ -363,15 +455,15 @@ def writeReportToJSON(output:dict):
         f.write(json.dumps(output, indent=4))
 
 
-def getAllPyFiles(input):
+def getAllPyFiles(inp):
     files = []
     output = []
-    if os.path.isdir(input):
-        for root, dir, file in os.walk(input):
+    if os.path.isdir(inp):
+        for root, dir, file in os.walk(inp):
             for f in file:
                 files.append(os.path.abspath(os.path.join(root, f)))
-    elif os.path.isfile(input):
-        files.append(os.path.abspath(input))
+    elif os.path.isfile(inp):
+        files.append(os.path.abspath(inp))
     else:
         return []
 
@@ -534,7 +626,7 @@ def getInfoFromPyPi(dependencies):
             #print(resp_info['name'], " -> ", resp_info['summary'], "@", address) # gets the info from pypi
 
             dep['package_URL'] = pypi_pg['url']
-            dep['hash'] = pypi_pg['md5_digest']
+            dep['hash'] = pypi_pg['digests']['sha256']
             # print(dep)
            
             dep['package_path'] = getPackageFromPyPi(os.path.join(ABS_PATH, DEP_DIR,dep['hash']), dep['package_URL'])
