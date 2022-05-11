@@ -1,10 +1,4 @@
-#from pstats import SortKey
-#from importlib.metadata import requires
-# from codecs import ignore_errors
-# from pydoc import describe
-from platform import release
 import shutil
-from textwrap import indent
 import click
 # import bandit
 import subprocess
@@ -142,8 +136,9 @@ def runCLI(argument,input_type):
     sub_dep = []
     temp_list = []
     for dep in dependencies:
-        path = dep['package_path']
-        sub_dep.append(extractDependenciesfromPackage(path))
+        if 'package_path' in dep:
+            path = dep['package_path']
+            sub_dep.append(extractDependenciesfromPackage(path))
     
     for sub_list in sub_dep:
         if sub_list:
@@ -216,21 +211,27 @@ def runCLI(argument,input_type):
     
     for package in dependencies :
         name = package['package']
-        version = package['version']
+        if 'version' in package:
+            version = package['version']
+        else:
+            version = 'any'
 
         if name in safety_db:
             return_list = []
             safety_results = safety_db[name]
             # print(type(safety_results))
             # print('### ', name, ' == ', version)
-
+            
             for x in range(len(safety_results)):
-                specs = safety_results[x]['specs']
-                for spec in specs:
-                    is_relevent = Version(version) in SpecifierSet(spec)
-                    # print('{} is {}'.format(spec, is_relevent))
-                    if is_relevent:
-                        return_list.append(safety_results[x])
+                if version == 'any':
+                    return_list.append(safety_results)
+                else:
+                    specs = safety_results[x]['specs']
+                    for spec in specs:
+                        is_relevent = Version(version) in SpecifierSet(spec)
+                        # print('{} is {}'.format(spec, is_relevent))
+                        if is_relevent:
+                            return_list.append(safety_results[x])
 
                 # print(safety_results[x]['id'])
                 # print(safety_results)
@@ -251,24 +252,25 @@ def runCLI(argument,input_type):
     #         print('condition for package ', name)
     for package in dependencies:
         name = package['package']
-        version = package['version']
-        postdata = '{"version": "%s", "package": {"name": "%s", "ecosystem": "PyPI"}}'%(version,name)
-        r = requests.post(url='https://api.osv.dev/v1/query', data=postdata)
-        test = r.json()
-        
-        if 'vulns' in test :
-            osv_vulns = []
-            for entry in test['vulns']:
-                temp = {'id' : entry['id'], 'details' : entry['details'], 'aliases': entry['aliases']}
-                urls = []
-                for alias in entry['aliases']:
-                    if re.match(r'^CVE-',alias):
-                        urls.append('https://nvd.nist.gov/vuln/detail/' + alias)
-                    elif re.match(r'^GHSA-', alias):
-                        urls.append('https://github.com/advisories/' + alias)
-                temp['urls'] = urls
-                osv_vulns.append(temp)
-            package['OSV'] = osv_vulns
+        if 'version' in package:
+            version = package['version']
+            postdata = '{"version": "%s", "package": {"name": "%s", "ecosystem": "PyPI"}}'%(version,name)
+            r = requests.post(url='https://api.osv.dev/v1/query', data=postdata)
+            test = r.json()
+            
+            if 'vulns' in test :
+                osv_vulns = []
+                for entry in test['vulns']:
+                    temp = {'id' : entry['id'], 'details' : entry['details'], 'aliases': entry['aliases']}
+                    urls = []
+                    for alias in entry['aliases']:
+                        if re.match(r'^CVE-',alias):
+                            urls.append('https://nvd.nist.gov/vuln/detail/' + alias)
+                        elif re.match(r'^GHSA-', alias):
+                            urls.append('https://github.com/advisories/' + alias)
+                    temp['urls'] = urls
+                    osv_vulns.append(temp)
+                package['OSV'] = osv_vulns
 
  
     
@@ -281,12 +283,13 @@ def runCLI(argument,input_type):
     print('### checking python source with bandit ###')
     for dep in dependencies:
         bandit_results = []
-        src_file_list = dep['source_files']
-        for src_file in src_file_list:
-            # print('bandit scan @ ', src_file)
-            bandit_report = banditScan(src_file)
-            bandit_results.append(bandit_report)
-        dep['bandit'] = bandit_results
+        if 'source_files' in dep:
+            src_file_list = dep['source_files']
+            for src_file in src_file_list:
+                # print('bandit scan @ ', src_file)
+                bandit_report = banditScan(src_file)
+                bandit_results.append(bandit_report)
+            dep['bandit'] = bandit_results
     if VERBOSE_LVL == 1:
         print()
 
@@ -342,8 +345,9 @@ def runCLI(argument,input_type):
     req_output = []
     req_output.append('# requirement.txt generated with SV4PP #')
     for dep in dependencies:
-        req_output.append('{} == {} --hash=sha256:{}'.format(dep['package'], dep['version'], dep['hash']))
-    
+        if 'version' in dep:
+            req_output.append('{} == {} --hash=sha256:{}'.format(dep['package'], dep['version'], dep['hash']))
+
 
     print('#### COPY FROM HERE ####')
     for line in req_output:
