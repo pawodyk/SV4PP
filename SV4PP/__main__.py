@@ -111,16 +111,16 @@ def runCLI(argument,input_type):
                 # print('@', line)
                 match = re.match(r'(^[a-zA-Z0-9\-\_\.]+)==([0-9\.]+)', line)
                 if match :
-                    dependencies.append({'package':match.group(1),'version': match.group(2), 'source': 'req'})
+                    dependencies.append({'package':match.group(1),'version': match.group(2), 'source': 'user'})
                     
     elif input_type=='package':
         match = re.match(r'(^[a-zA-Z0-9\-\_\.]+)==([0-9\.]+)', argument)
         if match :
-            dependencies.append({'package':match.group(1),'version': match.group(2)})
+            dependencies.append({'package':match.group(1),'version': match.group(2), 'source': 'user'})
         else :
             ## TODO : if user specify file e.g. requirements.txt the app will continue. need to implement second checks for (^[a-zA-Z0-9\-\_\.]+)
             if re.match(r'(^[a-zA-Z0-9\-\_\.]+)',argument):
-                dependencies.append({'package': argument})
+                dependencies.append({'package': argument, 'source': 'user'})
             else:
                 print('could not parse the package name, please make sure you select package in the format [name]==[version]')
 
@@ -224,7 +224,7 @@ def runCLI(argument,input_type):
             
             for x in range(len(safety_results)):
                 if version == 'any':
-                    return_list.append(safety_results)
+                    return_list = safety_results
                 else:
                     specs = safety_results[x]['specs']
                     for spec in specs:
@@ -354,7 +354,7 @@ def runCLI(argument,input_type):
         print(line)
     print('#### TO HERE ####\n')
 
-    user_input = input('save to file?\n[yes] [no]\n')
+    user_input = 'n'# input('save to file?\n[yes] [no]\n')
     if user_input in ['yes', 'y']:
         if not os.path.exists('requirements.txt'):
             with open('requirements.txt', 'w') as f:
@@ -364,9 +364,90 @@ def runCLI(argument,input_type):
         else:
             print('requirements file already exists.\nTo protect your data file was not overwritten,\nif you want to save to file please rename your current requirement.txt file')
 
+    ### RESULTS
+    print('###### RESULTS ######\n\n')
+    
+    subs = [x for x in dependencies if 'source' in x and x['source'] == 'meta']
+    
+    print( 'Scaned packages', len(dependencies))
+    print( 'From which dependencies',len(subs))
+    if len(subs) >0:
+        print('Dependency tree: ')
+        tmp = []
+        for d in dependencies:
+            tmp = []
+            if 'source' in d and d['source'] == 'user':
+                print(d['package'])
+                tmp = [sd['package'] for sd in dependencies if 'parent' in sd and sd['parent'].lower() == d['package'].lower()]
+                for x in tmp : print("  |-", x) 
+
+
+    print('\n### Bandit Results: ###')
+    for d in dependencies:
+        if 'bandit' in d:
+            for b in d['bandit']:
+                rpt = b['report']
+                if b['file'] in ['__init__.py', 'setup.py'] and rpt:
+                    print('!!! SUSPICIOUS !!!', end=' ')
+                print(b['path'], b['file'], end=' ')
+                if rpt:
+                    print()
+                    for x in rpt:
+                        print('  |->issue found @ line:{} col:{}\tIssue: {}\t Read more at {}'.format(x['line_number'],x['col_offset'],x['issue_text'],x['issue_cwe']['link']))
+                else:
+                    print('-> no issues')
+
+    print('\n### Safety-DB Results: ###')
+    for d in dependencies:
+        print(d['package'], ':')
+        if 'safety_db' in d:
+            for i in d['safety_db']:
+                adv = i['advisory']
+                cve = i['cve']
+                if re.search(r'malicious|Malicious', adv):
+                    print("!!! MALICIOUS !!!")
+                print('{}:\t{}, read more at https://nvd.nist.gov/vuln/detail/{}'.format(cve, adv, cve))
+        else:
+            print('\tno problems found')
+
+        
+    print('\n### OSV Results: ###')
+    for d in dependencies:
+        print(d['package'], ':')
+        if 'OSV' in d:
+            for o in d['OSV']:
+                print('ID: {} {}\t{}, read more at {}'.format(o['id'],o['aliases'],o['details'],o['urls'],))
+        else:
+            print('\tno problems found')
+
+
+    print('\n### typosquatting')
+    for d in dependencies:
+        if 'typo_candidates' in d:
+            dlw = d['downlo_last_week']
+            if dlw == -1:
+                print('package ',d['package'], ' is not on PyPi')
+            else:
+                print('package ',d['package'], ' was dowloaded ', dlw, 'times')
+            
+            if 'typo_candidates' in d:
+                print('following packages have simillar names, if the package is more popular it may be the package that you were looking for, such packages are indicated with (!) ')
+                print('[', end=' ')
+                for t in d['typo_candidates']:
+                    if t['downlo_last_week'] > d['downlo_last_week']:
+                        print('{}:{}(!) '.format(t['name'],t['downlo_last_week']),end=' ')
+                    if t['downlo_last_week'] == -1:
+                        #print(t[name], 'not on pypi')
+                        print(' ', end=' ')
+                    else:
+                        print('{}:{}'.format(t['name'],t['downlo_last_week']),end=' ')
+
+                print(']')
+
+        print()
+
 
     ### USER INTERFACE SECTION
-    ### TODO - CLI 
     ''' 
     #stats 
     stat_bandit = 0
